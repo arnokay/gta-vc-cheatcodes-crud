@@ -15,8 +15,8 @@ func (app *application) createCheatcodeHandler(w http.ResponseWriter, r *http.Re
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-		return
+    app.badRequestResponse(w, r, err)
+    return
 	}
 
 	app.writeJSON(w, 200, envelope{"cheatcode": input}, nil)
