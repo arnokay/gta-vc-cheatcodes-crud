@@ -14,7 +14,7 @@ func (app *application) routes() *chi.Mux {
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/healthcheck", app.healthcheckHandler)
-		// r.Post("/movies", app.createMovieHandler)
+		r.Post("/cheatcodes", app.createCheatcodeHandler)
 		r.Get("/cheatcodes/{id}", app.showCheatcodeHandler)
 	})
 	return r
