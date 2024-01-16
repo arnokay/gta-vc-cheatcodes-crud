@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/arnokay/gta-vc-cheatcodes-crud/internal/data"
+	"github.com/arnokay/gta-vc-cheatcodes-crud/internal/validator"
 )
 
 func (app *application) createCheatcodeHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,8 +16,21 @@ func (app *application) createCheatcodeHandler(w http.ResponseWriter, r *http.Re
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-    app.badRequestResponse(w, r, err)
-    return
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	cheatcode := &data.Cheatcode{
+		Code:        &input.Code,
+		Description: &input.Description,
+		Tags:        input.Tags,
+	}
+
+	v := validator.New()
+
+	if data.ValidateCheatcode(v, cheatcode); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
 	}
 
 	app.writeJSON(w, 200, envelope{"cheatcode": input}, nil)
@@ -29,7 +43,7 @@ func (app *application) showCheatcodeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	cheatcode := data.Movie{
+	cheatcode := data.Cheatcode{
 		ID: id,
 	}
 
