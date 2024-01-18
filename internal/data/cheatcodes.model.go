@@ -1,8 +1,10 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -20,7 +22,10 @@ func (m CheatcodeModel) Insert(cheatcode *Cheatcode) error {
 
 	args := []any{cheatcode.Code, cheatcode.Description, pq.Array(cheatcode.Tags)}
 
-	return m.DB.QueryRow(query, args...).Scan(&cheatcode.ID, &cheatcode.CreatedAt, &cheatcode.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&cheatcode.ID, &cheatcode.CreatedAt, &cheatcode.Version)
 }
 
 func (m CheatcodeModel) Get(id int64) (*Cheatcode, error) {
@@ -32,7 +37,10 @@ func (m CheatcodeModel) Get(id int64) (*Cheatcode, error) {
 
 	var cheatcode Cheatcode
 
-	err := m.DB.QueryRow(query, id).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&cheatcode.ID,
 		&cheatcode.CreatedAt,
 		&cheatcode.Code,
@@ -68,7 +76,10 @@ func (m CheatcodeModel) Update(cheatcode *Cheatcode) error {
 		cheatcode.Version,
 	}
 
-	err := m.DB.QueryRow(query, args...).Scan(&cheatcode.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&cheatcode.Version)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -91,7 +102,10 @@ func (m CheatcodeModel) Delete(id int64) error {
     WHERE id = $1
   `
 
-	result, err := m.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
