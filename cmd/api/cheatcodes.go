@@ -198,13 +198,13 @@ func (app *application) listCheatcodesHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	cheatcodes, err := app.models.Cheatcodes.GetAll(input.Code, input.Description, input.Tags, input.Filters)
+	cheatcodes, metadata, err := app.models.Cheatcodes.GetAll(input.Code, input.Description, input.Tags, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"cheatcodes": cheatcodes}, nil)
+  err = app.writeJSON(w, http.StatusOK, envelope{"cheatcodes": cheatcodes, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

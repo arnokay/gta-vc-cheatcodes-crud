@@ -123,9 +123,9 @@ func (m CheatcodeModel) Delete(id int64) error {
 	return nil
 }
 
-func (m CheatcodeModel) GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, error) {
+func (m CheatcodeModel) GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, Metadata, error) {
 	query := fmt.Sprintf(`
-    SELECT id, created_at, code, description, tags, version
+    SELECT count(*) OVER(), id, created_at, code, description, tags, version
     FROM cheatcodes
     WHERE (to_tsvector('simple', code) @@ plainto_tsquery('simple', $1) OR $1 = '')
     AND (to_tsvector('simple', description) @@ plainto_tsquery('simple', $2) OR $2 = '')
@@ -141,17 +141,19 @@ func (m CheatcodeModel) GetAll(code string, description string, tags []string, f
 
 	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
 	defer rows.Close()
 
+	totalRecords := 0
 	cheatcodes := []*Cheatcode{}
 
 	for rows.Next() {
 		var cheatcode Cheatcode
 
 		err := rows.Scan(
+			&totalRecords,
 			&cheatcode.ID,
 			&cheatcode.CreatedAt,
 			&cheatcode.Code,
@@ -160,14 +162,16 @@ func (m CheatcodeModel) GetAll(code string, description string, tags []string, f
 			&cheatcode.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 		cheatcodes = append(cheatcodes, &cheatcode)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return cheatcodes, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return cheatcodes, metadata, nil
 }

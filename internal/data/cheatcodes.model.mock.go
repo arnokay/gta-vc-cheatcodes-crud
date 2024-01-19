@@ -18,6 +18,6 @@ func (m MockCheatcodeModel) Delete(id int64) error {
 	return nil
 }
 
-func (m MockCheatcodeModel) GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, error) {
-	return nil, nil
+func (m MockCheatcodeModel) GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, Metadata, error) {
+	return nil, Metadata{}, nil
 }
