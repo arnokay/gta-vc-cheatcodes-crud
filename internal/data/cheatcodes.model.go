@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -120,4 +121,53 @@ func (m CheatcodeModel) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (m CheatcodeModel) GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, error) {
+	query := fmt.Sprintf(`
+    SELECT id, created_at, code, description, tags, version
+    FROM cheatcodes
+    WHERE (to_tsvector('simple', code) @@ plainto_tsquery('simple', $1) OR $1 = '')
+    AND (to_tsvector('simple', description) @@ plainto_tsquery('simple', $2) OR $2 = '')
+    AND (tags @> $3 OR $3 = '{}')
+    ORDER BY %s %s, id ASC
+    LIMIT $4 OFFSET $5
+  `, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{code, description, pq.Array(tags), filters.limit(), filters.offset()}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	cheatcodes := []*Cheatcode{}
+
+	for rows.Next() {
+		var cheatcode Cheatcode
+
+		err := rows.Scan(
+			&cheatcode.ID,
+			&cheatcode.CreatedAt,
+			&cheatcode.Code,
+			&cheatcode.Description,
+			pq.Array(&cheatcode.Tags),
+			&cheatcode.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		cheatcodes = append(cheatcodes, &cheatcode)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return cheatcodes, nil
 }

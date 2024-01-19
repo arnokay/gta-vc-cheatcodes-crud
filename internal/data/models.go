@@ -16,6 +16,7 @@ type Models struct {
 		Get(id int64) (*Cheatcode, error)
 		Update(cheatcode *Cheatcode) error
 		Delete(id int64) error
+    GetAll(code string, description string, tags []string, filters Filters) ([]*Cheatcode, error)
 	}
 }
 
