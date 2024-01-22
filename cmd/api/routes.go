@@ -9,13 +9,15 @@ import (
 func (app *application) routes() *chi.Mux {
 	r := chi.NewRouter()
 
+  r.Use(app.recoverPanic)
+
 	r.NotFound(http.HandlerFunc(app.notFoundResponse))
 	r.MethodNotAllowed(http.HandlerFunc(app.methodNotAllowedResponse))
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/healthcheck", app.healthcheckHandler)
 		r.Route("/cheatcodes", func(r chi.Router) {
-			r.Get("/", app.listCheatcodesHandler)
+      r.Get("/", app.listCheatcodesHandler)
 			r.Post("/", app.createCheatcodeHandler)
 			r.Get("/{id}", app.showCheatcodeHandler)
 			r.Patch("/{id}", app.updateCheatcodeHandler)
